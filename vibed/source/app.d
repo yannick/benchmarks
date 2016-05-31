@@ -8,40 +8,51 @@ import std.algorithm : map;
 import std.array : array;
 import vibe.core.connectionpool;
 
-ConnectionPool!PGConnection dbPool;
+private PostgresDB g_pgdb;
+auto connectDB() {
+    if (!g_pgdb) {
+        auto params = [
+            "host" : "localhost",
+            "database" : "ecratum",
+            "user" : "yannick",
+            "password" : ""
+        ];
+       
+        g_pgdb = new PostgresDB(params);
+        g_pgdb.maxConcurrency = 4; //try with num cpus first
+    }
+   
+    return g_pgdb.lockConnection();
+}
 
 
 struct Company
 {
-    int id;
+    long id;
     string name;
 }
 
+import std.typecons;
+import memutils.unique;
 void bench(scope HTTPServerRequest req, scope HTTPServerResponse res)
 {
-    auto conn = dbPool.lockConnection();
-    auto cmd = new PGCommand(conn, "SELECT id, name from companies LIMIT 10");
+    auto conn = connectDB();
 
-    auto result = cmd.executeQuery!(Company)();
-    Company[] companies = result.map!(a => cast(Company) a).array;
+    Company[] companies;
+    auto cmd = scoped!PGCommand(conn, "SELECT id, name from companies LIMIT 10");
 
-    //more complex but faster
-    auto ser = jsonSerializer(a => res.writeBody(cast(string) a));
-    ser.serializeValue(companies);
-    ser.flush;
+    auto result = cmd.executeQuery!(long, string)().unique();
+    foreach (row; *result) {
+        companies ~= Company(row[0], row[1]);
+    }
+    result.close(); //close right after you read
 
-    //easier version
-    //res.writeBody(companies.serializeToJson() ); 
-    result.close();
+    res.writeBody(companies.serializeToJson() ); 
+    
 }
 
-shared static this()
+void main()
 {
-
-    dbPool = new ConnectionPool!PGConnection({
-        return new PGConnection(["host" : "127.0.0.1", "database" : "ecratum",
-            "user" : "postgresql", "password" : ""]);
-    });
 
     auto router = new URLRouter;
 
@@ -50,4 +61,5 @@ shared static this()
     settings.port = 8080;
 
     listenHTTP(settings, router);
+    runEventLoop();
 }

@@ -1,13 +1,16 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"asdf": "0.0.4",
-		"ddb": "0.2.4",
-		"libasync": "0.7.9",
+		"asdf": "0.0.5",
+		"botan": "1.12.5",
+		"botan-math": "1.0.2",
+		"ddb": "0.2.2+commit.8.g28f9e6c",
+		"libasync": "0.7.9+commit.40.g75e77b6",
 		"libev": "5.0.0+4.04",
 		"libevent": "2.0.1+2.0.16",
-		"memutils": "0.4.5",
+		"libhttp2": "0.2.8",
+		"memutils": "0.4.5+commit.2.g07bb1c7",
 		"openssl": "1.1.4+1.0.1g",
-		"vibe-d": "0.7.28"
+		"vibe-d": "1.0.0+commit.97.gd8e8f7a"
 	}
 }
